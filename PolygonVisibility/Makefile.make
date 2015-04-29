@@ -37,11 +37,11 @@ viewPoints: viewPoints.o geom.o rtimer.o
 viewPoints.o: viewPoints.cpp  geom.h rtimer.h
 	$(CC) -c $(INCLUDEPATH)  viewPoints.cpp  -o $@
 
-geom.o: geom.c geom.h 
-	$(CC) -c $(INCLUDEPATH)  geom.c -o $@
+geom.o: geom.cpp geom.h
+	$(CC) -c $(INCLUDEPATH)  geom.cpp -o $@
 
-rtimer.o: rtimer.h rtimer.c
-	$(CC) -c $(INCLUDEPATH) rtimer.c -o $@
+rtimer.o: rtimer.h rtimer.cpp
+	$(CC) -c $(INCLUDEPATH) rtimer.cpp -o $@
 clean::	
 	rm *.o
 	rm viewPoints
