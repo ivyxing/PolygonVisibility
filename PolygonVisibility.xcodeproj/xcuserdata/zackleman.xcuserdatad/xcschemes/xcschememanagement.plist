@@ -4,7 +4,7 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
-		<key>orthosegintersection.xcscheme</key>
+		<key>PolygonVisibility.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
 			<integer>0</integer>
@@ -12,7 +12,7 @@
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
-		<key>A2E997271A9D56220029ABF1</key>
+		<key>A267D8401AF056AD0025EBD7</key>
 		<dict>
 			<key>primary</key>
 			<true/>
