@@ -37,14 +37,17 @@ GLfloat cyan[3] = {0.0, 1.0, 1.0};
 
 GLint fillmode = 0;
 
+enum Direction {UP, DOWN, LEFT, RIGHT};
+
 /**** Forward declarations of functions ****/
 /* Display and responsive functions */
 void display(void);
 void keypress(unsigned char key, int x, int y);
 void mouse(int button, int state, int Mx, int My);
 void drag(int x, int y);
-void move(void);
 void startMoving(void);
+int move(Direction d, double offset);
+int canMove(Direction d);
 /* Drawing functions */
 void drawCircle(float cx, float cy, float r, int num_segments);
 void drawCirclesAroundVertices(void);
@@ -76,6 +79,7 @@ point2D visiblityPoint; // The point of visibility inside the polygon.
 
 const int WINDOWSIZE = 500;
 const int NUM_SEGMENTS = 800; // Number of segments that form the circle.
+const double OFFSET = 1; // Number of pixels the point moves.
 
 //NOTE: all the structures below need to be global so that they can be rendered
 // The array of segments that form the polygon.
@@ -233,9 +237,9 @@ int insidePolygon(point2D p) {
     // Draw lines starting from the visibility point parallel to the x-axis.
     segment2D testLineRight, testLineLeft;
     testLineRight.start = p;
-    testLineRight.end = {WINDOWSIZE, p.y };
+    testLineRight.end = {WINDOWSIZE * 2, p.y };
     testLineLeft.start = p;
-    testLineLeft.end  = {0, p.y};
+    testLineLeft.end  = {-1 * WINDOWSIZE, p.y};
     
     // Count the number of intersections with the polygon.
     int numIntersectionsRight = 0, numIntersectionsLeft = 0;
@@ -467,46 +471,78 @@ void drag(int x, int y){
     }
 }
 
-// Move the visibility point left, right, up, or down.
-void move(void) {
-    // Store coordinates.
-    double vx = visiblityPoint.x;
-    double vy = visiblityPoint.y;
-    double offset = 0.2;
-    // Four directions.
-    point2D up = {vx, vy + offset};
-    point2D down = {vx, vy - offset};
-    point2D left = {vx - offset, vy};
-    point2D right = {vx + offset, vy};
-
-    // Move the visibility point/
-    if (insidePolygon(down)) {
-        visiblityPoint = down;
-    } else if (insidePolygon(right)) {
-        visiblityPoint = right;
-    } else if (insidePolygon(up)) {
-        visiblityPoint = up;
-    } else if (insidePolygon(left)) {
-        visiblityPoint = left;
-    } else {
-        printf("Oops stuck. You can drag the visibility point.");
+// Move the visibility point in the desired direction.
+// Return 1 if the direction is valid (new point inside polygon)
+// Return 0 if the point hits a wall.
+int move(Direction d, double offset) {
+    point2D p;
+    switch (d) {
+        case UP:
+            p = {visiblityPoint.x, visiblityPoint.y + offset};
+            break;
+        case DOWN:
+            p = {visiblityPoint.x, visiblityPoint.y - offset};
+            break;
+        case LEFT:
+            p = {visiblityPoint.x - offset, visiblityPoint.y};
+            break;
+        case RIGHT:
+            p = {visiblityPoint.x + offset, visiblityPoint.y};
+            break;
+        default:
+            break;
     }
-    // Recompute and update.
-    computeVisibleArea();
+    
+    int isInside = 0;
+    // Move the visibility point and compute area.
+    if (insidePolygon(p)) {
+        visiblityPoint = p;
+        isInside = 1;
+        computeVisibleArea();
+        display();
+    }
+    return isInside;
+}
+
+// Check if there is room to move.
+int canMove(Direction d) {
+    return move(d, OFFSET * 3);
 }
 
 // Automatically move the visibility point.
 void startMoving(void) {
     static int lastFrameTime = 0;
     int now, elapsed_ms;
+    Direction dir = LEFT;
+    int hit_x = 0, hit_y = 0;
+    
     while (1) {
-          now = glutGet (GLUT_ELAPSED_TIME);
+        now = glutGet (GLUT_ELAPSED_TIME);
         elapsed_ms = now - lastFrameTime;
         
         // Move visibility point every time interval.
         if (elapsed_ms  > 1) {
-            move();
-            display();
+            // If hitting the wall horizontally, move it vertically, and vice versa.
+            if (hit_x) {
+                // Check if there is room to move up.
+                dir = canMove(UP) ? UP : DOWN;
+                hit_x = 0;
+            } else if (hit_y) {
+                // Check if there is room to move left.
+                dir = canMove(LEFT) ? LEFT : RIGHT;
+                hit_y = 0;
+            }
+            
+            // Has hit a wall.
+            if (!move(dir, OFFSET)) {
+                if (dir == LEFT || dir == RIGHT) {
+                    hit_x = 1; // Hit a wall horizontally.
+                    hit_y = 0;
+                } else {
+                    hit_x = 0;
+                    hit_y = 1; // Hit a wall vertically.
+                }
+            }
             lastFrameTime = now;
         }
     }
