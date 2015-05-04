@@ -48,6 +48,7 @@ void drag(int x, int y);
 void startMoving(void);
 int move(Direction d, double offset);
 int canMove(Direction d);
+int hitWall(point2D p, Direction d, double radius);
 /* Drawing functions */
 void drawCircle(float cx, float cy, float r, int num_segments);
 void drawCirclesAroundVertices(void);
@@ -72,10 +73,10 @@ void refineVisibleVerticesExtensions(segment2D extendedLine, int index);
 // Helper function to computeVisibleArea(void)
 void connectExtendedLineIntersections(void);
 
-
 /**** Global variables ****/
 int hasFinishedPolygon = 0; // Whether the user has finished drawing the polygon.
 point2D visiblityPoint; // The point of visibility inside the polygon.
+point2D firstClick = {0, 0};
 
 const int WINDOWSIZE = 500;
 const int NUM_SEGMENTS = 800; // Number of segments that form the circle.
@@ -419,8 +420,14 @@ void mouse(int button, int state, int Mx, int My) {
         // User finished drawing polygon, so compute visibility area.
         if (hasFinishedPolygon) {
             visiblityPoint = mouseClick;
+           
             if (insidePolygon(visiblityPoint)) {
                 computeVisibleArea();
+                
+                // Store the first click of the visibility point.
+                if (firstClick.x == 0 && firstClick.y == 0) {
+                    firstClick = visiblityPoint;
+                }
             } else {
                 printf("Please click inside the polygon.");
             }
@@ -460,7 +467,7 @@ void mouse(int button, int state, int Mx, int My) {
 }
 
 // Responds to mouse drag (of the visibility point).
-void drag(int x, int y){
+void drag(int x, int y) {
     if (hasFinishedPolygon && insidePolygon(visiblityPoint)) {
         // Update visibility point.
         visiblityPoint = {(double)x, (double)(WINDOWSIZE - y)};
@@ -495,7 +502,7 @@ int move(Direction d, double offset) {
     
     int isInside = 0;
     // Move the visibility point and compute area.
-    if (insidePolygon(p)) {
+    if (!hitWall(p, d, RADIUS)) {
         visiblityPoint = p;
         isInside = 1;
         computeVisibleArea();
@@ -506,7 +513,28 @@ int move(Direction d, double offset) {
 
 // Check if there is room to move.
 int canMove(Direction d) {
-    return move(d, OFFSET * 3);
+    return move(d, OFFSET);
+}
+
+// Whether the point has hit a wall.
+int hitWall(point2D p, Direction d, double radius) {
+    segment2D s;
+    point2D start, end;
+    if (d == LEFT || d == RIGHT) {
+        start = {p.x - radius, p.y};
+        end = {p.x + radius, p.y};
+    } else {
+        start = {p.x, p.y + radius};
+        end = {p.x, p.y - radius};
+    }
+    s = {start, end};
+    
+    for (int i = 0; i < polygonSegments.size(); i++) {
+        if (intersect(s, polygonSegments[i])) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 // Automatically move the visibility point.
@@ -522,14 +550,26 @@ void startMoving(void) {
         
         // Move visibility point every time interval.
         if (elapsed_ms  > 1) {
+            // Double check if the point is inside the polygon.
+            if (!insidePolygon(visiblityPoint)) {
+                // If not, reset point to default position.
+                visiblityPoint = firstClick;
+                hit_x = 0;
+                hit_y = 0;
+                
+                printf("HERE");
+            }
+            
             // If hitting the wall horizontally, move it vertically, and vice versa.
             if (hit_x) {
                 // Check if there is room to move up.
-                dir = canMove(UP) ? UP : DOWN;
+                dir = canMove(DOWN) ? DOWN : UP;
                 hit_x = 0;
+                hit_y = 0;
             } else if (hit_y) {
                 // Check if there is room to move left.
                 dir = canMove(LEFT) ? LEFT : RIGHT;
+                hit_y = 0;
                 hit_y = 0;
             }
             
