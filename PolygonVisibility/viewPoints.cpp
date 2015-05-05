@@ -8,7 +8,7 @@
  (3) Computes and displays the visible area from the point.
  
  */
-#include <set>
+
 #include <vector>
 #include "geom.h"
 #include "rtimer.h"
@@ -276,7 +276,7 @@ point2D closestEdgePoint(segment2D line, vector<int> edgeIndices) {
        
         // Compute the intersection points and compare distance.
         point2D intersection = computeIntersection(line, polygonSegments[edgeIndices[i]]);
-        double d = distance(visiblityPoint, intersection);
+        double d = distance_(visiblityPoint, intersection);
         
         if (d < closestDistance) {
             closestDistance = d;

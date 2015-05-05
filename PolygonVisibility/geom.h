@@ -48,7 +48,7 @@ point2D computeIntersection(segment2D s1, segment2D s2);
 double doubleEqual(double a, double b);
 
 /* Return the distance between two points. */
-double distance(point2D a, point2D b);
+double distance_(point2D a, point2D b);
 
 /* Returns 1 if point a is within distance RADIUS of point b, 0 otherwise. */
 int withinRadius(point2D a, point2D b);
